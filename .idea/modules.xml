@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/spacedg.iml" filepath="$PROJECT_DIR$/.idea/spacedg.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/space.iml" filepath="$PROJECT_DIR$/.idea/space.iml" />
     </modules>
   </component>
 </project>
