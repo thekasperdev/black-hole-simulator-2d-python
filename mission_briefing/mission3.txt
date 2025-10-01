@@ -1,0 +1,149 @@
+OBJECTIVE: Create multiple parallel light beams moving across the screen (no collision detection yet).
+
+GETTING STARTED - SKELETON CODE WALKTHROUGH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open: src/missions/mission3_multiple_beams_no_collision.py
+
+INHERITANCE FROM MISSION 2:
+✓ Inherit from Mission2SingleBeam (reuses particle shader + background)
+✓ Override spawn_particle() to create multiple beams
+✓ Extend update() for multi-particle management
+✓ Add beam spacing controls with keyboard
+
+SKELETON TODOs TO COMPLETE:
+☐ 1. Set up beam spacing in initialize()
+☐ 2. Override spawn_particle() to call spawn_multiple_beams()
+☐ 3. Implement spawn_multiple_beams() method
+☐ 4. Update the update() method for multiple particles
+☐ 5. Add keyboard controls for beam spacing (, and . keys)
+
+STEP-BY-STEP IMPLEMENTATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━��━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. CLASS DEFINITION:
+```python
+from .mission2_single_beam import Mission2SingleBeam
+
+class Mission3MultipleBeamsNoCollision(Mission2SingleBeam):
+    def get_name(self) -> str:
+        return "Mission 3: Multiple Light Beams"
+```
+
+2. INITIALIZE METHOD:
+```python
+def initialize(self):
+    # Mission 3 specific settings (set before parent init)
+    self.spacing = 24  # pixels between beam rows
+
+    # Initialize parent class (shaders, etc.)
+    # This will call spawn_particle -> spawn_multiple_beams
+    super().initialize()
+```
+
+3. OVERRIDE SPAWN_PARTICLE:
+```python
+def spawn_particle(self):
+    """Override to spawn multiple beams instead of single particle"""
+    self.spawn_multiple_beams()
+```
+
+4. SPAWN_MULTIPLE_BEAMS METHOD:
+```python
+def spawn_multiple_beams(self):
+    """Create multiple parallel light beams"""
+    margin = 40
+    ys = np.arange(margin, self.height - margin + 1, max(2, self.spacing), dtype=np.int32)
+    count_per_beam = 80
+    x0 = -200.0  # Start particles off-screen to the left
+
+    # Stagger initial x positions so beams appear continuous
+    pts = []
+    vels = []
+    for y in ys:
+        for i in range(count_per_beam):
+            pts.append([x0 - i * 1.5, float(y)])
+            vels.append([self.speed, 0.0])
+
+    self.pos = np.array(pts, dtype=np.float32)
+    self.vel = np.array(vels, dtype=np.float32)
+    self.alive = np.ones(len(self.pos), dtype=bool)
+```
+
+5. UPDATE METHOD (Override from Mission 2):
+```python
+def update(self, dt: float):
+    """Update multiple particles WITHOUT collision detection"""
+    if self.paused or len(self.pos) == 0:
+        return
+
+    # Move particles
+    self.pos[self.alive] += self.vel[self.alive] * dt
+
+    # Check if particles went off-screen to the right - respawn them
+    for i in range(len(self.pos)):
+        if self.alive[i] and self.pos[i, 0] > self.width + 50:
+            # Respawn particle on the left with same Y coordinate
+            self.pos[i, 0] = -50.0
+            # Keep original Y position to maintain beam formation
+            self.alive[i] = True
+
+    # Only cull particles that have gone too far off-screen vertically
+    # NO collision detection with black hole
+    onscreen_y = (self.pos[:, 1] >= -50) & (self.pos[:, 1] < self.height + 50)
+    self.alive &= onscreen_y
+
+    # Rebuild buffer from current alive set
+    self.rebuild_vbo()
+```
+
+6. KEYBOARD CONTROLS (Override from Mission 2):
+```python
+def handle_key(self, key, action, modifiers, keys):
+    """Handle keyboard input for Mission 3"""
+    if action == keys.ACTION_PRESS:
+        if key == keys.SPACE:
+            self.paused = not self.paused
+            print(f"Mission 3: Animation {'paused' if self.paused else 'unpaused'}")
+        elif key == keys.R:
+            self.spawn_multiple_beams()
+            self.rebuild_vbo()
+            print("Mission 3: Multiple beams reset")
+        elif key == keys.COMMA:  # tighten spacing
+            self.spacing = max(2, self.spacing - 2)
+            self.spawn_multiple_beams()
+            self.rebuild_vbo()
+            print(f"Mission 3: Spacing decreased to {self.spacing}")
+        elif key == keys.PERIOD:  # widen spacing
+            self.spacing = min(self.height, self.spacing + 2)
+            self.spawn_multiple_beams()
+            self.rebuild_vbo()
+            print(f"Mission 3: Spacing increased to {self.spacing}")
+```
+
+KEY CONCEPTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• BEAM FORMATION: np.arange() creates evenly spaced Y coordinates for beam rows
+• PARTICLE STAGGERING: Offset initial X positions to create continuous beam appearance
+• ARRAY SCALING: Hundreds of particles managed efficiently with numpy arrays
+• NO COLLISION: Particles pass through black hole (collision detection comes in Mission 4)
+• INTERACTIVE SPACING: Comma/period keys adjust beam density in real-time
+
+QUICK DEBUGGING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• If no beams visible: Check that spawn_multiple_beams() is creating particles
+• If beams don't move: Verify update() is moving all particles, not just one
+• If performance issues: Check that alive array is being used to cull off-screen particles
+• Test spacing: Use comma/period keys to verify beam density changes
+
+CONTROLS:
+• SPACE = Pause/unpause animation
+• R = Reset all beams
+• COMMA (,) = Decrease beam spacing (tighter beams)
+• PERIOD (.) = Increase beam spacing (wider beams)
+
+SUCCESS = Multiple parallel beams streaming across screen, adjustable spacing!
+
+This sets up the particle arrays for Mission 4's collision detection.

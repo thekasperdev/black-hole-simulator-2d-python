@@ -1,0 +1,160 @@
+OBJECTIVE: Add collision detection so light particles are absorbed when they hit the black hole.
+
+GETTING STARTED - SKELETON CODE WALKTHROUGH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open: src/missions/mission4_multiple_beams.py
+
+INHERITANCE FROM MISSION 3:
+✓ Inherit from Mission3MultipleBeamsNoCollision (reuses particle management)
+✓ Override update() to add collision detection
+✓ Keep same beam spawning and spacing controls
+✓ Add automatic wave respawn when all particles absorbed
+
+SKELETON TODOs TO COMPLETE:
+☐ 1. Set up initialization (reuse Mission 3 structure)
+�� 2. Override update() method to add collision detection
+☐ 3. Implement vectorized distance calculation
+☐ 4. Add particle absorption logic
+☐ 5. Add automatic wave respawn system
+
+STEP-BY-STEP IMPLEMENTATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. CLASS DEFINITION:
+```python
+from .mission3_multiple_beams_no_collision import Mission3MultipleBeamsNoCollision
+
+class Mission4MultipleBeams(Mission3MultipleBeamsNoCollision):
+    def get_name(self) -> str:
+        return "Mission 4: Multiple Light Beams"
+```
+
+2. INITIALIZE METHOD (Same as Mission 3):
+```python
+def initialize(self):
+    # Mission 4 specific settings (set before parent init)
+    self.spacing = 24  # pixels between beam rows
+
+    # Initialize parent class (shaders, etc.)
+    # This will call spawn_particle -> spawn_multiple_beams
+    super().initialize()
+```
+
+3. SPAWN_PARTICLE AND SPAWN_MULTIPLE_BEAMS (Same as Mission 3):
+```python
+def spawn_particle(self):
+    """Override to spawn multiple beams instead of single particle"""
+    self.spawn_multiple_beams()
+
+def spawn_multiple_beams(self):
+    """Create multiple parallel light beams"""
+    margin = 40
+    ys = np.arange(margin, self.height - margin + 1, max(2, self.spacing), dtype=np.int32)
+    count_per_beam = 80
+    x0 = -200.0  # Start particles off-screen to the left
+
+    # Stagger initial x positions so beams appear continuous
+    pts = []
+    vels = []
+    for y in ys:
+        for i in range(count_per_beam):
+            pts.append([x0 - i * 1.5, float(y)])
+            vels.append([self.speed, 0.0])
+
+    self.pos = np.array(pts, dtype=np.float32)
+    self.vel = np.array(vels, dtype=np.float32)
+    self.alive = np.ones(len(self.pos), dtype=bool)
+```
+
+4. UPDATE METHOD WITH COLLISION DETECTION:
+```python
+def update(self, dt: float):
+    """Update multiple particles with collision detection"""
+    if self.paused or len(self.pos) == 0:
+        return
+
+    # Move particles
+    self.pos[self.alive] += self.vel[self.alive] * dt
+
+    # Black hole collision detection (particles disappear when they hit)
+    to_center = self.pos - self.center
+    r2 = (to_center[:, 0] ** 2 + to_center[:, 1] ** 2)
+    hit = r2 <= (self.rs_px * self.rs_px)
+
+    # Remove particles that hit the black hole (they stay gone)
+    self.alive &= ~hit
+
+    # Remove particles that went off-screen to the right
+    offscreen_right = self.pos[:, 0] > self.width + 50
+    self.alive &= ~offscreen_right
+
+    # Check if all particles are gone (absorbed or off-screen)
+    if not np.any(self.alive):
+        # All particles are gone, start a new wave
+        self.spawn_multiple_beams()
+
+    # Rebuild buffer from current alive set
+    self.rebuild_vbo()
+```
+
+5. KEYBOARD CONTROLS (Same as Mission 3):
+```python
+def handle_key(self, key, action, modifiers, keys):
+    """Handle keyboard input for Mission 4"""
+    if action == keys.ACTION_PRESS:
+        if key == keys.SPACE:
+            self.paused = not self.paused
+            print(f"Mission 4: Animation {'paused' if self.paused else 'unpaused'}")
+        elif key == keys.R:
+            self.spawn_multiple_beams()
+            self.rebuild_vbo()
+            print("Mission 4: Beams reset")
+        elif key == keys.COMMA:  # tighten spacing
+            self.spacing = max(2, self.spacing - 2)
+            self.spawn_multiple_beams()
+            self.rebuild_vbo()
+            print(f"Mission 4: Spacing decreased to {self.spacing}")
+        elif key == keys.PERIOD:  # widen spacing
+            self.spacing = min(self.height, self.spacing + 2)
+            self.spawn_multiple_beams()
+            self.rebuild_vbo()
+            print(f"Mission 4: Spacing increased to {self.spacing}")
+```
+
+KEY CONCEPTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• VECTORIZED COLLISION: to_center = self.pos - self.center calculates all distances at once
+• DISTANCE SQUARED: r2 = dx² + dy² avoids expensive sqrt() operation
+• BOOLEAN MASKING: hit = r2 <= (self.rs_px * self.rs_px) creates collision mask
+• PARTICLE ABSORPTION: self.alive &= ~hit removes collided particles
+• WAVE RESPAWN: if not np.any(self.alive) triggers new particle wave
+
+COLLISION DETECTION LOGIC:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Move all particles: pos += vel * dt
+2. Calculate distance to black hole center for all particles
+3. Find particles inside black hole radius (collision)
+4. Remove collided particles from alive array
+5. Remove off-screen particles
+6. Check if wave is complete → spawn new wave if needed
+
+QUICK DEBUGGING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━━━━��━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• If particles don't disappear: Check collision radius calculation (self.rs_px)
+• If no respawn: Verify np.any(self.alive) condition
+• If performance issues: Ensure using r² instead of sqrt(r²)
+• Test collision visually: Particles should vanish exactly at black hole edge
+
+CONTROLS:
+• SPACE = Pause/unpause animation
+• R = Reset current wave
+• COMMA (,) = Decrease beam spacing (more collisions)
+• PERIOD (.) = Increase beam spacing (fewer collisions)
+
+SUCCESS = Particles disappear when hitting black hole, new waves spawn automatically!
+
+This introduces the physics foundation for Mission 5's gravitational effects.

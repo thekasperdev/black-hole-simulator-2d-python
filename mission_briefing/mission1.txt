@@ -1,0 +1,98 @@
+OBJECTIVE: Create the foundational rendering system with a grid background and black hole disc.
+
+GETTING STARTED - SKELETON CODE WALKTHROUGH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open: src/missions/mission1_grid_blackhole.py
+
+AVAILABLE FROM BaseMission:
+✓ self.ctx (ModernGL context for creating shaders/VAOs)
+✓ self.center (black hole center position as numpy array)
+✓ self.rs_px (black hole radius in pixels)
+✓ self.width, self.height (screen dimensions)
+
+SKELETON ANALYSIS - WHAT'S PROVIDED:
+✓ Vertex shader (full-screen triangle generation)
+✓ Fragment shader structure with placeholder
+✓ Method stubs with TODO comments
+
+SKELETON TODOs TO COMPLETE:
+☐ 1. Replace fragment shader placeholder with grid/disc logic
+☐ 2. Add uniform declarations to fragment shader
+☐ 3. Set up VAO and uniforms in initialize() (replace "TODO: Set up VAO...")
+☐ 4. Implement render() method (replace "TODO: Draw the grid...")
+
+STEP-BY-STEP IMPLEMENTATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. REPLACE THE FRAGMENT SHADER:
+Find this in the skeleton:
+```glsl
+// Fragment shader: Implement grid/disc coloring logic here
+#version 330
+in vec2 v_uv;
+out vec4 f_color;
+void main() {
+    // TODO: Color the grid and black hole disc
+    f_color = vec4(0.0, 0.0, 0.0, 1.0); // Placeholder
+}
+```
+
+Replace with:
+```glsl
+// Fragment shader: Grid and black hole disc rendering
+#version 330
+in vec2 v_uv;
+out vec4 f_color;
+uniform vec2 u_center;
+uniform float u_rsPx;
+uniform float u_grid_gap;
+
+void main() {
+    vec2 frag = gl_FragCoord.xy;
+    float r = length(frag - u_center);
+
+    // Grid lines
+    float gx = (mod(frag.x, u_grid_gap) < 1.0) ? 1.0 : 0.0;
+    float gy = (mod(frag.y, u_grid_gap) < 1.0) ? 1.0 : 0.0;
+    float grid = max(gx, gy);
+
+    vec3 bg = vec3(0.03, 0.04, 0.07);
+    vec3 grid_col = vec3(0.12, 0.14, 0.20);
+    vec3 col = mix(bg, grid_col, grid);
+
+    // Black hole disc
+    if (r <= u_rsPx) { col = vec3(0.0); }
+
+    f_color = vec4(col, 1.0);
+}
+```
+
+2. COMPLETE initialize() METHOD:
+Find the "TODO: Set up VAO and any other required OpenGL resources" comment and add:
+```python
+# Set shader uniforms
+self.bg_prog["u_center"].value = tuple(self.center)
+self.bg_prog["u_rsPx"].value = float(self.rs_px)
+self.bg_prog["u_grid_gap"].value = 24.0
+
+# Create VAO for background rendering
+self.bg_vao = self.ctx.vertex_array(self.bg_prog, [])
+```
+
+3. COMPLETE render() METHOD:
+Find the "TODO: Draw the grid and disc using OpenGL" comment and replace with:
+```python
+self.bg_vao.render(mode=moderngl.TRIANGLES, vertices=3)
+```
+
+QUICK DEBUGGING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• If black screen: Check that render() calls self.bg_vao.render()
+• If shader error: Make sure uniforms are declared in fragment shader
+• Test with: f_color = vec4(1.0, 0.0, 0.0, 1.0); (should show red)
+
+SUCCESS = Grid + Black disc visible → Move to Mission 2!
+
+This foundation will be inherited by later missions through setup_background_rendering()

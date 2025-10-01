@@ -1,0 +1,145 @@
+cOBJECTIVE: Create a moving light particle that travels across the screen from left to right.
+
+GETTING STARTED - SKELETON CODE WALKTHROUGH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open: src/missions/mission2_single_beam.py
+
+INHERITANCE FROM MISSION 1:
+✓ Inherit from Mission1GridBlackHole (not BaseMission)
+✓ Call self.setup_background_rendering() to reuse grid/black hole
+✓ Use self.render_background() in render() method
+
+SKELETON TODOs TO COMPLETE:
+☐ 1. Create particle shader program in initialize()
+☐ 2. Set up particle appearance (size, color)
+☐ 3. Implement spawn_particle() method
+☐ 4. Implement rebuild_vbo() method
+☐ 5. Complete update() method for particle movement
+☐ 6. Complete render() method to draw background + particle
+☐ 7. Add keyboard controls (SPACE = pause, R = reset)
+
+STEP-BY-STEP IMPLEMENTATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. CLASS DEFINITION:
+```python
+from .mission1_grid_blackhole import Mission1GridBlackHole
+
+class Mission2SingleBeam(Mission1GridBlackHole):
+    def get_name(self) -> str:
+        return "Mission 2: Single Light Beam"
+```
+
+2. PARTICLE SHADER PROGRAM (Add to initialize()):
+```python
+def initialize(self):
+    self.setup_background_rendering()
+
+    self.pt_prog = self.ctx.program(
+        vertex_shader="""
+        #version 330
+        in vec2 in_pos;
+        uniform float u_point_size;
+        void main() {
+            gl_Position = vec4(2.0 * in_pos.x / 1100.0 - 1.0, 1.0 - 2.0 * in_pos.y / 800.0, 0.0, 1.0);
+            gl_PointSize = u_point_size;
+        }""",
+        fragment_shader="""
+        #version 330
+        out vec4 f_color;
+        uniform vec3 u_color;
+        void main() {
+            f_color = vec4(u_color, 1.0);
+        }"""
+    )
+
+    # Set particle appearance
+    self.pt_prog["u_point_size"].value = 4.0
+    self.pt_prog["u_color"].value = (1.0, 0.90, 0.55)  # warm yellow
+
+    # Simulation state
+    self.speed = 220.0
+    self.paused = False
+
+    self.spawn_particle()
+    self.rebuild_vbo()
+```
+
+3. SPAWN_PARTICLE METHOD:
+```python
+def spawn_particle(self):
+    center_y = self.height * 0.5
+    x0 = -50.0  # Start off-screen left
+
+    self.pos = np.array([[x0, center_y]], dtype=np.float32)
+    self.vel = np.array([[self.speed, 0.0]], dtype=np.float32)
+    self.alive = np.ones(len(self.pos), dtype=bool)
+```
+
+4. REBUILD_VBO METHOD:
+```python
+def rebuild_vbo(self):
+    alive_pos = self.pos[self.alive]
+    if alive_pos.size == 0:
+        alive_pos = np.zeros((1, 2), dtype=np.float32)
+    self.vbo = self.ctx.buffer(alive_pos.tobytes())
+    self.vao = self.ctx.simple_vertex_array(self.pt_prog, self.vbo, "in_pos")
+```
+
+5. UPDATE METHOD:
+```python
+def update(self, dt: float):
+    if self.paused or len(self.pos) == 0:
+        return
+
+    # Move particles
+    self.pos[self.alive] += self.vel[self.alive] * dt
+
+    # Respawn when off-screen right
+    for i in range(len(self.pos)):
+        if self.alive[i] and self.pos[i, 0] > self.width + 50:
+            self.pos[i, 0] = -50.0
+            self.pos[i, 1] = self.height * 0.5
+            self.alive[i] = True
+
+    self.rebuild_vbo()
+```
+
+6. RENDER METHOD:
+```python
+def render(self):
+    self.render_background()  # From Mission 1
+    self.vao.render(mode=moderngl.POINTS)
+```
+
+7. KEYBOARD CONTROLS:
+```python
+def handle_key(self, key, action, modifiers, keys):
+    if action == keys.ACTION_PRESS:
+        if key == keys.SPACE:
+            self.paused = not self.paused
+        elif key == keys.R:
+            self.spawn_particle()
+            self.rebuild_vbo()
+```
+
+KEY CONCEPTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• NUMPY ARRAYS: pos, vel, alive arrays track particle state
+• VBO UPDATES: rebuild_vbo() refreshes OpenGL buffer each frame
+• TIME-BASED MOVEMENT: pos += vel * dt for frame-rate independent motion
+• COORDINATE TRANSFORM: Screen pixels → OpenGL normalized coordinates
+• PARTICLE LIFECYCLE: spawn → move → respawn when off-screen
+
+QUICK DEBUGGING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• If no particle visible: Check coordinate transformation in vertex shader
+• If particle doesn't move: Verify update() is being called and not paused
+• If crashes: Make sure alive_pos.size > 0 before creating VBO
+
+SUCCESS = Yellow particle moving left to right, respawning continuously!
+
+This builds the foundation for Mission 3's multiple particles.

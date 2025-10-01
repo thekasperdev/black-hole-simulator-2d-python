@@ -1,0 +1,313 @@
+CONGRATULATIONS! You've reached the ultimate mission!
+>>> This is the Magnus Opus of computational general relativity <<<
+>>> You're about to visualize one of Einstein's most beautiful predictions <<<
+
+OBJECTIVE: Add spectacular gravitational redshift visualization by color-coding photon trails based on energy loss.
+
+GETTING STARTED - SKELETON CODE WALKTHROUGH:
+━━━━━━━━━━���━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open: src/missions/mission9_redshift.py
+
+VISUAL UPGRADE FROM MISSION 8:
+✓ Inherit from Mission8Validation (reuses geodesic integration + validation)
+✓ Add gravitational redshift factor: g(r) = √(1 - rs/r)
+✓ Create per-vertex color mapping based on energy loss
+✓ Implement two visualization modes: local vs emission radius
+✓ Add advanced OpenGL shader with per-vertex RGB coloring
+
+SKELETON TODOs TO COMPLETE:
+☐ 1. Override initialize() to set up color mode and shaders
+☐ 2. Implement g-factor calculation for redshift
+☐ 3. Create color mapping from redshift to RGB
+☐ 4. Create advanced OpenGL shader with per-vertex colors
+☐ 5. Override render() method for spectacular colored trails
+
+STEP-BY-STEP IMPLEMENTATION:
+━━━━━━━━━━━━━━━━━━��━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. MISSION CLASS DEFINITION:
+```python
+import numpy as np
+import moderngl
+from .mission8_validation import Mission8Validation, ValidatingRay
+
+class Mission9Redshift(Mission8Validation):
+    """
+    Mission 9: Visualise gravitational redshift by colouring photons.
+
+    Inherits:
+      - Mission8Validation: provides Schwarzschild rays, validation logic and stepping.
+    Key additions:
+      - colour_mode: 'local' or 'infty'
+      - mapping of g-factor -> RGB colour per vertex
+      - modified render() to supply per-vertex colour and alpha attributes to the GPU
+    """
+    def get_name(self):
+        return "Mission 9: Gravitational Redshift Visualisation"
+```
+
+2. INITIALIZE METHOD:
+```python
+def initialize(self):
+    # Use parent initialiser to set up BH, world and validation ray layout.
+    # Mission8.initialize constructs ValidatingRay instances; we call it to keep measurement logic.
+    super().initialize()
+
+    # Colouring config:
+    # 'local'  : colour varies along the ray with current radius r -> g(r) = sqrt(1 - r_s/r)
+    # 'infty'  : colour is constant per ray based on the initial emission radius (r_emit)
+    self.colour_mode = 'local'   # 'local' or 'infty'
+
+    # scale for visual brightness if you want to exaggerate effect (1.0 = no exaggeration)
+    self.brightness_scale = 1.0
+
+    # Ensure the rendering program that accepts per-vertex colour exists
+    self._create_colour_render_prog()
+
+    if getattr(self, 'debug', False):
+        print("[Mission9] redshift visualisation initialised; colour_mode=", self.colour_mode)
+```
+
+3. ADVANCED COLOR SHADER CREATION:
+```python
+def _create_colour_render_prog(self):
+    """
+    Create a shader program that accepts per-vertex colour (vec3) and alpha (float).
+    We reuse u_view to map pixels -> NDC as in earlier missions.
+    """
+    if hasattr(self, '_col_prog') and self._col_prog is not None:
+        return
+    self._col_prog = self.ctx.program(
+        vertex_shader='''
+            #version 330
+            in vec2 in_vert;
+            in vec3 in_col;
+            in float in_alpha;
+            out vec3 v_col;
+            out float v_alpha;
+            uniform vec2 u_view;
+            void main() {
+                vec2 pixel = in_vert;
+                vec2 ndc = (pixel / u_view) * 2.0 - 1.0;
+                ndc.y = -ndc.y; // flip y for top-left pixel coords
+                gl_Position = vec4(ndc, 0.0, 1.0);
+                gl_PointSize = 4.0;
+                v_col = in_col;
+                v_alpha = in_alpha;
+            }
+        ''',
+        fragment_shader='''
+            #version 330
+            in vec3 v_col;
+            in float v_alpha;
+            out vec4 f_color;
+            void main() {
+                f_color = vec4(v_col, v_alpha);
+            }
+        '''
+    )
+```
+
+4. GRAVITATIONAL REDSHIFT PHYSICS:
+```python
+def _g_factor(self, r_m):
+    """
+    Compute g(r) = sqrt(1 - r_s / r) safely (clamp negative).
+    r_m: radius in metres
+    """
+    rs = float(self.rs_m)
+    # avoid division by zero and clamp to [0,1]
+    if r_m <= rs:
+        return 0.0
+    val = 1.0 - rs / r_m
+    if val <= 0.0:
+        return 0.0
+    return float(np.sqrt(val))
+
+def _colour_from_g(self, g):
+    """
+    Map g in [0,1] -> RGB colour.
+    - g near 0 (strong redshift) -> warm red
+    - g near 1 (far field)        -> cool pale-blue/white
+    Returns a tuple (r,g,b).
+    """
+    g = float(np.clip(g, 0.0, 1.0))
+    # simple linear blend: red (1,0.2,0.0) -> cool white/blue (0.7,0.85,1.0)
+    warm = np.array([1.0, 0.2, 0.0], dtype=np.float32)
+    cool = np.array([0.7, 0.85, 1.0], dtype=np.float32)
+    col = (1.0 - g) * warm + g * cool
+    # apply brightness scale
+    col *= float(self.brightness_scale)
+    # clamp
+    col = np.clip(col, 0.0, 1.0)
+    return col.astype(np.float32)
+```
+
+5. SPECTACULAR COLORED RENDERING:
+```python
+def render(self):
+    """
+    Override render to provide per-vertex colour for trails and points.
+    The rest of the scene (background and BH disc) is drawn as usual.
+    """
+    # background
+    self.ctx.clear(0.08, 0.08, 0.10)
+    self.ctx.enable(moderngl.BLEND)
+
+    prog = self._col_prog
+
+    # Draw trails with colour per vertex
+    for ray in self.rays:
+        if len(ray.trail) < 2:
+            continue
+        N = len(ray.trail)
+        # trail vertices: convert trail (metres) -> pixel coords
+        verts = np.array([
+            [self.center[0] + p[0] * self.pixels_per_metre,
+             self.center[1] + p[1] * self.pixels_per_metre]
+            for p in ray.trail
+        ], dtype=np.float32)
+
+        # compute per-vertex colours depending on selected mode
+        cols = np.zeros((N, 3), dtype=np.float32)
+        for i, p in enumerate(ray.trail):
+            # p is (x,y) in metres; compute r
+            r_m = float(np.hypot(p[0], p[1]))
+            if self.colour_mode == 'local':
+                g = self._g_factor(r_m)
+            else:  # 'infty' : colour constant for this ray using the initial emission radius
+                # initial radius approximated by ray.impact_b and initial x; more robustly
+                # use the first trail entry (start location)
+                r_emit = float(np.hypot(ray.trail[0][0], ray.trail[0][1]))
+                g = self._g_factor(r_emit)
+            cols[i] = self._colour_from_g(g)
+
+        # alpha fades along trail for visual clarity
+        alphas = np.linspace(0.05, 1.0, N, dtype=np.float32)
+
+        # create buffers and VAO
+        vbo = self.ctx.buffer(verts.tobytes())
+        cbo = self.ctx.buffer(cols.tobytes())
+        abo = self.ctx.buffer(alphas.tobytes())
+        vao_content = [
+            (vbo, '2f', 'in_vert'),
+            (cbo, '3f', 'in_col'),
+            (abo, '1f', 'in_alpha'),
+        ]
+        vao = self.ctx.vertex_array(prog, vao_content)
+        prog['u_view'].value = (float(self.window_width), float(self.window_height))
+        vao.render(moderngl.LINE_STRIP)
+
+    # Draw ray heads as coloured points (use same per-ray colour as last trail sample)
+    pts = []
+    cols_pts = []
+    alphas_pts = []
+    for ray in self.rays:
+        if not ray.alive and len(ray.trail) == 0:
+            continue
+        # get current position (x,y) in metres
+        x = ray.trail[-1][0] if len(ray.trail) else ray.x
+        y = ray.trail[-1][1] if len(ray.trail) else ray.y
+        px = float(self.center[0] + x * self.pixels_per_metre)
+        py = float(self.center[1] + y * self.pixels_per_metre)
+        pts.append([px, py])
+        # compute colour as above (use current r)
+        r_m = float(np.hypot(x, y))
+        if self.colour_mode == 'local':
+            g = self._g_factor(r_m)
+        else:
+            r_emit = float(np.hypot(ray.trail[0][0], ray.trail[0][1]))
+            g = self._g_factor(r_emit)
+        cols_pts.append(self._colour_from_g(g))
+        alphas_pts.append(1.0 if ray.alive else 0.4)
+
+    if pts:
+        pts = np.array(pts, dtype=np.float32)
+        cols_pts = np.array(cols_pts, dtype=np.float32)
+        alphas_pts = np.array(alphas_pts, dtype=np.float32)
+
+        vbo = self.ctx.buffer(pts.tobytes())
+        cbo = self.ctx.buffer(cols_pts.tobytes())
+        abo = self.ctx.buffer(alphas_pts.tobytes())
+        vao_content = [
+            (vbo, '2f', 'in_vert'),
+            (cbo, '3f', 'in_col'),
+            (abo, '1f', 'in_alpha'),
+        ]
+        vao = self.ctx.vertex_array(prog, vao_content)
+        prog['u_view'].value = (float(self.window_width), float(self.window_height))
+        vao.render(moderngl.POINTS)
+
+    # Draw the black hole disc via parent's helper
+    self._ensure_bh_disc()
+    self._bh_disc_prog['u_view'].value = (float(self.window_width), float(self.window_height))
+    self._bh_disc_prog['u_center'].value = (float(self.center[0]), float(self.center[1]))
+    self._bh_disc_prog['u_radius'].value = float(self.rs_px)
+    self._bh_disc_vao.render(moderngl.TRIANGLE_FAN)
+```
+
+6. OPTIONAL COLOR MODE TOGGLE:
+```python
+# Optional helper: toggle colour mode at runtime (participants may wire to UI/keys)
+def toggle_colour_mode(self):
+    if self.colour_mode == 'local':
+        self.colour_mode = 'infty'
+    else:
+        self.colour_mode = 'local'
+    if getattr(self, 'debug', False):
+        print("[Mission9] colour_mode set to", self.colour_mode)
+```
+
+KEY PHYSICS CONCEPTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• GRAVITATIONAL REDSHIFT: g(r) = √(1 - rs/r) quantifies energy loss
+• COLOR MAPPING: Red = high redshift (energy loss), Blue = low redshift (far field)
+• LOCAL MODE: Color changes continuously along trail (dynamic energy)
+• EMISSION MODE: Color constant per ray based on starting position (initial energy)
+• ENERGY CONSERVATION: Photons lose energy climbing out of gravitational wells
+
+VISUALIZATION MODES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• LOCAL MODE ('local'): Each trail segment colored by its current radius
+  - Shows real-time energy changes as photons move
+  - Creates beautiful gradient effects along trails
+  - Most physically realistic representation
+
+• EMISSION MODE ('infty'): Each ray colored by its emission radius
+  - Constant color per ray based on starting position
+  - Easier to track individual photons
+  - Shows initial gravitational potential energy
+
+COLOR PHYSICS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• g = 1.0 (far field) → Cool blue [0.7, 0.85, 1.0] (high energy)
+• g = 0.5 (moderate redshift) → Orange/yellow (medium energy loss)
+• g = 0.0 (event horizon) → Deep red [1.0, 0.2, 0.0] (maximum energy loss)
+• Linear interpolation: color = (1-g) × red + g × blue
+• Brightness scaling available for visual enhancement
+
+EXPECTED VISUAL RESULTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• TRAILS START BLUE: Photons begin with high energy (far from black hole)
+• GRADUAL COLOR SHIFT: Trails gradually redden as photons lose energy
+�� RED NEAR BLACK HOLE: Maximum redshift near event horizon
+• BEAUTIFUL GRADIENTS: Smooth color transitions show continuous energy loss
+• CURVED COLORED PATHS: Geodesic bending + redshift visualization combined
+
+QUICK DEBUGGING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• If all trails same color: Check g-factor calculation and color mode
+• If colors too subtle: Increase brightness_scale (try 1.5)
+• If performance issues: Reduce trail length or optimize buffer creation
+• If wrong color mapping: Verify g-factor formula √(1 - rs/r)
+• If shader errors: Check per-vertex attribute setup (vert, col, alpha)
+
+SUCCESS = Spectacular colored trails showing Einstein's gravitational redshift!
+
+You've completed the ultimate physics visualization - congratulations!

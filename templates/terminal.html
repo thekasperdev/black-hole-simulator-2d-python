@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AE-DOS Terminal - SpaceD</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #000;
+            color: #00ff00;
+            font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .terminal-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .terminal-header {
+            background-color: #001100;
+            border-bottom: 2px solid #00ff00;
+            padding: 10px 20px;
+            font-size: 12px;
+            color: #00aa00;
+        }
+        
+        .terminal {
+            flex: 1;
+            background-color: #000;
+            border: 2px solid #00ff00;
+            padding: 20px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.4;
+            scrollbar-width: thin;
+            scrollbar-color: #00ff00 #000;
+        }
+        
+        .terminal::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .terminal::-webkit-scrollbar-track {
+            background: #000;
+        }
+        
+        .terminal::-webkit-scrollbar-thumb {
+            background: #00ff00;
+            border-radius: 4px;
+        }
+        
+        .input-section {
+            background-color: #001100;
+            border-top: 2px solid #00ff00;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .prompt {
+            color: #00ffff;
+            font-weight: bold;
+        }
+        
+        input {
+            background-color: #000;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            padding: 8px 12px;
+            outline: none;
+            flex: 1;
+            border-radius: 4px;
+        }
+        
+        input:focus {
+            border-color: #00ffff;
+            box-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+        }
+        
+        /* Terminal colors */
+        .cyan { color: #00ffff; }
+        .yellow { color: #ffff00; }
+        .red { color: #ff0000; }
+        .green { color: #00ff00; }
+        .magenta { color: #ff00ff; }
+        .blue { color: #0080ff; }
+        .white { color: #ffffff; }
+        .dim { color: #888888; }
+        .bold { font-weight: bold; }
+        .underline { text-decoration: underline; }
+        
+        /* Special styling for panels */
+        .panel {
+            border: 1px solid #ffff00;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: #001100;
+        }
+        
+        .panel-title {
+            color: #00ffff;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .menu-item {
+            margin: 5px 0;
+            padding: 2px 0;
+        }
+        
+        .menu-item:hover {
+            background-color: #003300;
+        }
+        
+        .highlighted {
+            background-color: #ffff00;
+            color: #000;
+            padding: 2px 4px;
+        }
+        
+        .status-bar {
+            font-size: 10px;
+            color: #666;
+            text-align: right;
+        }
+        
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .terminal {
+                padding: 15px;
+                font-size: 12px;
+            }
+            
+            .input-section {
+                padding: 10px 15px;
+            }
+            
+            input {
+                font-size: 12px;
+                padding: 6px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal-container">
+        <div class="terminal-header">
+            <span>AE-DOS Terminal | SpaceD</span>
+            <span class="status-bar">Connected | Users Online: <span id="userCount">1</span></span>
+        </div>
+        
+        <div id="terminal" class="terminal">
+            <div class="loading">Initializing connection...</div>
+        </div>
+        
+        <div class="input-section">
+            <span class="prompt">></span>
+            <input type="text" id="userInput" placeholder="Enter command..." autofocus>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const terminal = document.getElementById('terminal');
+        const userInput = document.getElementById('userInput');
+        const userCount = document.getElementById('userCount');
+
+        // Terminal state
+        let commandHistory = [];
+        let historyIndex = -1;
+
+        // Socket event handlers
+        socket.on('connect', function() {
+            console.log('Connected to SpaceD Terminal Server');
+            appendToTerminal('<span class="green">Connection established.</span>');
+        });
+
+        socket.on('disconnect', function() {
+            appendToTerminal('<span class="red">Connection lost. Attempting to reconnect...</span>');
+        });
+
+        socket.on('boot_sequence', function(data) {
+            terminal.innerHTML = '';
+            // Show boot animation
+            showBootAnimation().then(() => {
+                appendToTerminal('<span class="cyan bold">' + data.banner + '</span>');
+                appendToTerminal('<span class="cyan">' + data.message + '</span>');
+            });
+        });
+
+        socket.on('clear_screen', function() {
+            terminal.innerHTML = '';
+        });
+
+        socket.on('show_main_menu', function(data) {
+            terminal.innerHTML = '';
+            appendToTerminal('<span class="cyan bold">AE-DOS OPERATING SYSTEM</span>');
+            appendToTerminal('');
+            appendToTerminal('<span class="green">' + data.message + '</span>');
+            appendToTerminal('<span class="red">Access granted. Clearance level: COSMIC-7</span>');
+            appendToTerminal('');
+            appendToTerminal('<pre class="cyan">     ___       _______         _______   ______        _______.\n    /   \\     |   ____|       |       \\ /  __  \\      /       |\n   /  ^  \\    |  |__    ______|  .--.  |  |  |  |    |   (----`\n  /  /_\\  \\   |   __|  |______|  |  |  |  |  |  |     \\   \\    \n /  _____  \\  |  |____        |  \'--\'  |  `--\'  | .----)   |   \n/__/     \\__\\ |_______|       |_______/ \\______/  |_______/</pre>');
+            appendToTerminal('');
+            appendToTerminal('<span class="bold">Select an option:</span>');
+            appendToTerminal('');
+            appendToTerminal('<span class="yellow">  1) LOGS</span>');
+            appendToTerminal('<span class="yellow">  2) MISSIONS</span>');
+            appendToTerminal('<span class="yellow">  3) EXIT</span>');
+            appendToTerminal('');
+            appendToTerminal('<span class="dim">Press L for logs, M for missions, or Q to quit:</span>');
+        });
+
+        socket.on('show_logs_menu', function(data) {
+            terminal.innerHTML = '';
+            appendToTerminalTop('<span class="cyan bold">AE-DOS LOGS</span>');
+            appendToTerminalTop('');
+            data.logs.forEach(log => {
+                if (log.available) {
+                    appendToTerminalTop('<span class="green">' + log.number + ') ' + log.title + '</span>');
+                } else {
+                    appendToTerminalTop('<span class="yellow">' + log.number + ') ' + log.title + '</span>');
+                }
+            });
+            appendToTerminalTop('');
+            appendToTerminalTop('<span class="dim">Press 1-9 to view log, M for main menu, Q to quit:</span>');
+        });
+
+        socket.on('show_missions_menu', function(data) {
+            terminal.innerHTML = '';
+            appendToTerminalTop('<span class="cyan bold">AE-DOS MISSIONS</span>');
+            appendToTerminalTop('');
+            data.missions.forEach(mission => {
+                if (mission.available) {
+                    appendToTerminalTop('<span class="green">' + mission.number + ') ' + mission.title + '</span>');
+                } else {
+                    appendToTerminalTop('<span class="yellow">' + mission.number + ') ' + mission.title + '</span>');
+                }
+            });
+            appendToTerminalTop('');
+            appendToTerminalTop('<span class="dim">Press 1-9 to view mission, M for main menu, Q to quit:</span>');
+        });
+
+        socket.on('show_log_content', function(data) {
+            terminal.innerHTML = '';
+            appendToTerminalTop('<span class="green bold">LOG ' + data.log_number + ' CONTENT:</span>');
+            appendToTerminalTop('');
+            appendToTerminalTop('<div class="panel"><div class="panel-title">CLASSIFIED LOG ENTRY</div>' + formatContent(data.content) + '</div>');
+            appendToTerminalTop('');
+            appendToTerminalTop('<span class="dim">Press ENTER to continue to mission briefing, R to return, L for logs, M for menu, Q to quit:</span>');
+        });
+
+        socket.on('show_mission_briefing', function(data) {
+            terminal.innerHTML = '';
+            appendToTerminal('<span class="cyan bold">MISSION BRIEFING: Probe connection initiated.</span>');
+            appendToTerminal('');
+            
+            // Show animated probe connection
+            showProbeConnection().then(() => {
+                appendToTerminal('<span class="magenta bold">Probe link established. Receiving mission objective...</span>');
+                appendToTerminal('');
+                appendToTerminal('<div class="panel"><div class="panel-title cyan">MISSION ' + data.mission_number + '</div>' + formatContent(data.content) + '</div>');
+                appendToTerminal('');
+                appendToTerminal('<span class="bold">Good luck, Operator ' + data.operator + '!</span>');
+                appendToTerminal('');
+                appendToTerminal('<span class="dim">Press R to return to log, L for logs menu, N for missions menu, M for main menu, Q to quit:</span>');
+            });
+        });
+
+        socket.on('exit_message', function(data) {
+            appendToTerminal('');
+            appendToTerminal('<span class="red bold">' + data.message + '</span>');
+            appendToTerminal('<span class="dim">Connection terminated.</span>');
+            userInput.disabled = true;
+        });
+
+        // Input handling
+        userInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const input = this.value.trim();
+                // Handle empty ENTER as a command (for continuing from log to mission)
+                if (input || true) {  // Always process ENTER
+                    if (input) {
+                        commandHistory.unshift(input);
+                        if (commandHistory.length > 50) {
+                            commandHistory.pop();
+                        }
+                        historyIndex = -1;
+                        appendToTerminal('<span class="prompt">> </span>' + input);
+                    } else {
+                        // Empty ENTER - show it as pressing ENTER
+                        appendToTerminal('<span class="prompt">> </span><span class="dim">[ENTER]</span>');
+                    }
+                    socket.emit('user_input', {input: input});
+                    this.value = '';
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    this.value = commandHistory[historyIndex];
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    this.value = commandHistory[historyIndex];
+                } else if (historyIndex === 0) {
+                    historyIndex = -1;
+                    this.value = '';
+                }
+            }
+        });
+
+        // Helper functions
+        function appendToTerminal(content) {
+            terminal.innerHTML += content + '\n';
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function appendToTerminalTop(content) {
+            terminal.innerHTML += content + '\n';
+            terminal.scrollTop = 0; // Scroll to top instead of bottom
+        }
+
+        function formatContent(content) {
+            // Basic formatting for mission content
+            return content
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<span class="bold">$1</span>')
+                .replace(/\*(.*?)\*/g, '<span class="yellow">$1</span>')
+                .replace(/`(.*?)`/g, '<span class="cyan">$1</span>');
+        }
+
+        // Auto-focus input
+        document.addEventListener('click', function() {
+            if (!userInput.disabled) {
+                userInput.focus();
+            }
+        });
+
+        // Prevent page scrolling with arrow keys
+        document.addEventListener('keydown', function(e) {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                if (document.activeElement === userInput) {
+                    // Allow normal behavior in input
+                    return;
+                }
+                e.preventDefault();
+            }
+        });
+
+        // Animation functions
+        function showBootAnimation() {
+            return new Promise((resolve) => {
+                // First show flickering "Initializing connection..." for 8 seconds (slower)
+                terminal.innerHTML = '';
+                let flickerCount = 0;
+                const maxFlickers = 25; // 8 seconds at ~320ms intervals
+                let isVisible = true;
+
+                function flickerInitializing() {
+                    if (flickerCount < maxFlickers) {
+                        // Toggle visibility with slower, more visible intervals
+                        if (isVisible) {
+                            terminal.innerHTML = '<div class="loading">Initializing connection...</div>';
+                        } else {
+                            terminal.innerHTML = '<div style="opacity: 0.2; color: #444;">Initializing connection...</div>';
+                        }
+                        isVisible = !isVisible;
+                        flickerCount++;
+
+                        // Much slower flicker timing - more visible
+                        const delay = 250 + Math.random() * 200; // 250-450ms intervals
+                        setTimeout(flickerInitializing, delay);
+                    } else {
+                        // After flickering, show the boot sequence
+                        terminal.innerHTML = '';
+                        startBootSequence();
+                    }
+                }
+
+                function startBootSequence() {
+                    const bootMessages = [
+                        '<span class="dim">AE-DOS BIOS v1.42 initializing...</span>',
+                        '<span class="dim">Memory check: 16384K OK</span>',
+                        '<span class="dim">Quantum processor: ACTIVE</span>',
+                        '<span class="dim">Reality.dll: LOADED</span>',
+                        '<span class="dim">Physics engine: PROBABLY WORKING</span>',
+                        '<span class="dim">Coffee machine driver: CRITICAL_ERROR (priorities people!)</span>',
+                        '<span class="dim">Creating Dr.Eriks FACTORIA factory</span>',
+                        '<span class="dim">404: FACTORIA factory not found</span>',
+                        '<span class="dim">Murphy\'s Law compliance: 100%</span>',
+                        '<span class="dim">Existential dread buffer: INITIALIZED</span>',
+                        '<span class="green">System ready. Loading SpaceD Terminal...</span>'
+                    ];
+
+                    let i = 0;
+                    function showNextMessage() {
+                        if (i < bootMessages.length) {
+                            appendToTerminal(bootMessages[i]);
+                            i++;
+                            setTimeout(showNextMessage, 400 + Math.random() * 200);
+                        } else {
+                            setTimeout(resolve, 500);
+                        }
+                    }
+                    showNextMessage();
+                }
+
+                flickerInitializing();
+            });
+        }
+
+        function showProbeConnection() {
+            return new Promise((resolve) => {
+                appendToTerminal('<span class="cyan">INITIALIZING CONNECTION TO OBSERVATION PROBES...</span>');
+                
+                const totalSteps = 40;
+                let currentStep = 0;
+                let progressLineIndex = -1; // Track which line contains the progress bar
+                const fakeLogs = [
+                    'Establishing quantum uplink...',
+                    'Synchronizing probe clocks (they\'re fashionably late)...',
+                    'Calibrating sensors (coffee sensor still broken)...',
+                    'Authenticating probe signature (it says "help me")...',
+                    'Negotiating cosmic handshake (very firm grip)...',
+                    'Verifying telemetry stream (mostly screaming)...',
+                    'Aligning orbital parameters (like herding cats in space)...',
+                    'Checking probe integrity (morally questionable)...',
+                    'Downloading probe\'s latest memes...',
+                    'Installing patience.exe (please wait)...',
+                    'Probe reports: "I\'ve seen things you people wouldn\'t believe"...',
+                    'Running diagnostics (results: "it\'s complicated")...',
+                    'Probe therapy session initiated (trust issues detected)...',
+                    'Finalizing connection (probe agrees reluctantly)...'
+                ];
+                let logIndex = 0;
+
+                function updateProgress() {
+                    // Show a fake log every ~3 steps (more frequent for more humor)
+                    if (currentStep % 3 === 0 && logIndex < fakeLogs.length && currentStep > 0) {
+                        appendToTerminal('<span class="dim">' + fakeLogs[logIndex] + '</span>');
+                        logIndex++;
+                    }
+
+                    // Calculate percentage correctly
+                    const percentage = Math.round((currentStep / totalSteps) * 100);
+
+                    // Build progress bar
+                    let progressBar = '[';
+                    for (let i = 0; i < totalSteps; i++) {
+                        if (i < currentStep) {
+                            progressBar += '█';
+                        } else if (i === currentStep && currentStep < totalSteps) {
+                            progressBar += '▓';
+                        } else {
+                            progressBar += '░';
+                        }
+                    }
+                    progressBar += '] ' + percentage + '%';
+
+                    // Update progress bar in place
+                    const lines = terminal.innerHTML.split('\n');
+
+                    if (progressLineIndex >= 0 && progressLineIndex < lines.length) {
+                        // Replace existing progress line
+                        lines[progressLineIndex] = '<span class="dim">' + progressBar + '</span>';
+                        terminal.innerHTML = lines.join('\n');
+                    } else {
+                        // First time - add progress line and remember its position
+                        appendToTerminal('<span class="dim">' + progressBar + '</span>');
+                        const newLines = terminal.innerHTML.split('\n');
+                        progressLineIndex = newLines.length - 2; // -2 because of the trailing newline
+                    }
+
+                    currentStep++;
+
+                    if (currentStep <= totalSteps) {
+                        // Variable speed - slower at 95%
+                        let delay = currentStep >= 38 ? 200 : 50 + Math.random() * 100;
+                        setTimeout(updateProgress, delay);
+                    } else {
+                        // Show brief overshoot effect
+                        setTimeout(() => {
+                            // Replace progress bar with 103% message
+                            const lines = terminal.innerHTML.split('\n');
+                            if (progressLineIndex >= 0 && progressLineIndex < lines.length) {
+                                lines[progressLineIndex] = '<span class="green">[████████████████████████████████████████] 103% PROBE LOCK ACHIEVED</span>';
+                                terminal.innerHTML = lines.join('\n');
+                            }
+
+                            setTimeout(() => {
+                                // Replace 103% with 100% stable message
+                                const lines = terminal.innerHTML.split('\n');
+                                if (progressLineIndex >= 0 && progressLineIndex < lines.length) {
+                                    lines[progressLineIndex] = '<span class="green">[████████████████████████████████████████] 100% Probe connection stable</span>';
+                                    terminal.innerHTML = lines.join('\n');
+                                }
+                                appendToTerminal('');
+                                setTimeout(resolve, 800);
+                            }, 900);
+                        }, 200);
+                    }
+                }
+
+                setTimeout(updateProgress, 300);
+            });
+        }
+    </script>
+</body>
+</html>
