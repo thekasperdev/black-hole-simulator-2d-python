@@ -1,0 +1,106 @@
+OBJECTIVE: Validate numerical geodesic integration against Einstein's weak-field deflection formula.
+
+GETTING STARTED - SKELETON CODE WALKTHROUGH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━━━━��━━━━━━━━━━━━
+
+Open: src/missions/mission8_validation.py
+
+VALIDATION UPGRADE FROM MISSION 7:
+✓ Inherit from Mission7LightBending (reuses geodesic integration)
+✓ Add ValidatingRay class with measurement capabilities
+✓ Implement Einstein's weak-field formula: Δφ ≈ 2rs/b
+✓ Measure deflection angles automatically when rays reach far-field
+✓ Compare numerical vs analytical results with error reporting
+
+SKELETON TODOs TO COMPLETE:
+☐ 1. Create ValidatingRay class with measurement storage
+☐ 2. Implement deflection measurement from trail data
+☐ 3. Override initialize() to create validating rays
+☐ 4. Override update() to add measurement attempts
+☐ 5. Add comparison output and validation reporting
+
+IMPLEMENTATION GUIDELINES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. VALIDATING RAY CLASS:
+Extend SchwarzschildRay with measurement capabilities:
+- Store initial heading angle: atan2(vy, vx) at ray creation
+- Calculate impact parameter: b = |y_initial| (for rays starting far left)
+- Compute analytical prediction: Δφ = 2rs/b (Einstein's weak-field formula)
+- Add measurement flags and storage for deflection comparison
+- Inherit all geodesic integration from SchwarzschildRay
+
+Key measurement attributes:
+- initial_heading: Starting direction in radians
+- impact_b: Impact parameter in meters
+- measured: Boolean flag for measurement completion
+- deflection: Measured deflection angle
+- analytic_deflection: Theoretical prediction
+
+2. DEFLECTION MEASUREMENT METHOD:
+Implement automatic measurement when rays reach far-field:
+- Check measurement criteria: ray far from black hole (large x and r)
+- Calculate outgoing direction from last two trail points
+- Compute deflection: θ_final - θ_initial
+- Wrap angle to [-π, π] range for proper comparison
+- Set measurement flag to prevent duplicate measurements
+
+Measurement criteria suggestions:
+- x > 40% of world width (far-field right side)
+- r > 45% of world diagonal (far from black hole)
+- Trail has at least 2 points for direction calculation
+
+3. CLASS DEFINITION AND INITIALIZATION:
+Inherit from Mission7LightBending and replace ray creation:
+- Create ValidatingRay objects instead of SchwarzschildRay
+- Set up measurement thresholds in physical units
+- Initialize counters for measurement reporting
+- Use same ray layout as Mission 7 for consistency
+
+4. UPDATE METHOD WITH MEASUREMENT:
+Extend Mission 7's update to add measurement attempts:
+- Integrate geodesics using inherited fixed timestep system
+- After each physics step, attempt measurements on all rays
+- Print validation results when measurements occur
+- Reinitialize rays when all are measured or absorbed
+- Use inherited vertex shader for rendering (provided for coordinate transformation)
+
+5. VALIDATION REPORTING:
+Implement real-time comparison output:
+- Print measured vs analytical deflection for each ray
+- Show impact parameter and deflection angles in degrees
+- Calculate and display ratio: measured/analytical
+- Provide periodic summaries of all measurements
+- Report accuracy statistics for different impact parameter ranges
+
+**Why provide vertex shader:** The coordinate transformation from screen pixels to OpenGL normalized coordinates is complex and not physics-related.
+You should focus on implementing Einstein's physics, not graphics programming details. So it's already part of the skeleton branch and solution branch.
+
+KEY CONCEPTS & HINTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• EINSTEIN'S FORMULA: Δφ ≈ 2rs/b valid for weak-field regime (b >> rs)
+• IMPACT PARAMETER: Distance of closest approach for straight-line trajectory
+• DEFLECTION MEASUREMENT: Requires far-field asymptotic direction
+• VALIDATION REGIME: Formula accuracy depends on impact parameter size
+• SCIENTIFIC METHOD: Compare numerical simulation against analytical theory
+
+PHYSICS VALIDATION EXPECTATIONS:
+━���━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━��━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Large impact (b > 5rs): Near-perfect agreement (<1% error)
+• Medium impact (3rs < b < 5rs): Good agreement (1-5% error)
+• Small impact (b < 3rs): Significant deviation (formula breaks down)
+• Critical regime (b ≈ 1.5rs): Complete breakdown near photon sphere
+
+DEBUGGING TIPS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━━━━��━━━━━━━━━━━━━━
+
+• No measurements? Check far-field thresholds and ray survival
+• Wrong angles? Verify angle calculation and wrapping to [-π, π]
+• Poor agreement? Check impact parameter calculation from initial position
+• Console spam? Add measurement intervals and summary reporting
+• Ray escapes unmeasured? Ensure measurement criteria aren't too strict
+
+EXPECTED RESULT: Console output showing real-time validation of Einstein's predictions! Your numerical simulation should closely match the analytical formula for large impact parameters.
+
+**This completes the scientific validation of your black hole simulation!**

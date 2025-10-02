@@ -1,0 +1,95 @@
+OBJECTIVE: Implement genuine Schwarzschild null geodesics to simulate authentic gravitational light bending.
+
+GETTING STARTED - SKELETON CODE WALKTHROUGH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open: src/missions/mission7_light_bending.py
+
+PHYSICS UPGRADE FROM MISSION 6:
+✓ Inherit from Mission6FixedTimestepSimple (reuses trail rendering + fixed timestep)
+✓ Replace straight-line Ray with SchwarzschildRay class
+✓ Implement RK4 integration of null geodesics in affine parameter λ
+✓ Add conserved quantities (energy E, angular momentum L)
+✓ Convert between coordinate time and affine parameter
+
+SKELETON TODOs TO COMPLETE:
+☐ 1. Create SchwarzschildRay class with geodesic integration
+☐ 2. Implement conserved quantity computation from initial velocity
+☐ 3. Add RK4 integration method for geodesic equations
+☐ 4. Override initialize() to create Schwarzschild rays
+☐ 5. Override update() to integrate in affine parameter
+
+IMPLEMENTATION GUIDELINES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. SCHWARZSCHILD RAY CLASS:
+Create a sophisticated ray class that follows curved spacetime:
+- Store position in polar coordinates (r, φ) for the Schwarzschild metric
+- Maintain conserved quantities: energy E and angular momentum L
+- Implement conversion between coordinate time derivatives and affine parameter λ
+- Use the null geodesic condition to relate spatial and temporal components
+- Store integration state for Runge-Kutta numerical integration
+
+Key physics concepts:
+- Schwarzschild metric: ds² = -(1-rs/r)c²dt² + (1-rs/r)⁻¹dr² + r²dφ²
+- Null geodesics: light follows paths where ds² = 0
+- Conserved quantities from Killing vectors of the metric
+- Affine parameter λ provides proper parameterization
+
+2. CONSERVED QUANTITY CALCULATION:
+From initial Cartesian velocity, compute:
+- Decompose velocity into radial (vᵣ) and angular (ω = rdφ/dt) components
+- Calculate metric factor f(r) = 1 - rs/r
+- Solve null condition to find dt/dλ from coordinate velocities
+- Compute energy: E = f(r) × dt/dλ
+- Compute angular momentum: L = r² × dφ/dλ
+
+3. GEODESIC EQUATIONS:
+Implement the geodesic equation d²xᵘ/dλ² + Γᵘᵥₚ(dxᵥ/dλ)(dxᵖ/dλ) = 0
+For Schwarzschild metric in (r,φ) coordinates:
+- d²r/dλ² = -(rs/2r²)(1-rs/r)⁻¹(dt/dλ)² + rs(dr/dλ)²/2r²(1-rs/r) + (1-rs/r)(rdφ/dλ)²
+- d²φ/dλ² = -2(dr/dλ)(dφ/dλ)/r
+
+4. RK4 INTEGRATION:
+Implement 4th-order Runge-Kutta for the geodesic system:
+- State vector: [r, pᵣ, φ] where pᵣ = dr/dλ
+- Derivatives: [pᵣ, d²r/dλ², dφ/dλ]
+- Use conserved quantities to compute missing derivatives
+- Integrate in affine parameter λ with small steps (try λ_step = 1e-6)
+
+5. COORDINATE CONVERSION:
+Convert between different parameterizations:
+- Affine parameter λ (for integration)
+- Coordinate time t (for visualization)
+- Screen coordinates (x,y) in pixels
+- Maintain trail history in screen coordinates for rendering
+
+**Why provide vertex shader:** The coordinate transformation from screen pixels to OpenGL normalized coordinates is complex and not physics-related.
+You should focus on implementing Einstein's physics, not graphics programming details. So it's already part of the skeleton branch and solution branch.
+
+KEY CONCEPTS & HINTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• GENERAL RELATIVITY: Gravity curves spacetime, light follows curved paths
+• NULL GEODESICS: Light travels along paths that minimize spacetime interval
+• CONSERVED QUANTITIES: Energy and angular momentum remain constant along geodesics
+• COORDINATE SINGULARITY: Schwarzschild coordinates become singular at r = rs
+• AFFINE PARAMETERIZATION: Proper parameter for null geodesics (not coordinate time)
+
+PHYSICS REFERENCES:
+• Schwarzschild metric describes spacetime around spherically symmetric mass
+• Christoffel symbols encode the curvature of spacetime
+• Effective potential determines radial motion: Veff = L²/r² - rs L²/r³
+• Light bending formula: δφ ≈ 4GM/c²b for large impact parameter b
+
+DEBUGGING TIPS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━��━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Integration unstable? Try smaller affine parameter steps
+• Rays escaping to infinity? Check conserved quantity calculations
+• Wrong bending amount? Verify geodesic equation implementation
+• Coordinate singularities? Handle r → rs case carefully
+• Performance issues? Consider using compiled integration (Numba/Cython)
+
+EXPECTED RESULT: Spectacular gravitational light bending! Light rays curve around the black hole, creating dramatic visual effects that match Einstein's predictions.
+
+**This is a BONUS mission - completing Mission 6 demonstrates solid physics simulation skills!**

@@ -1,0 +1,107 @@
+OBJECTIVE: Add spectacular gravitational redshift visualization by color-coding photon trails based on energy loss.
+
+GETTING STARTED - SKELETON CODE WALKTHROUGH:
+━━━━━━━━━━�����━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open: src/missions/mission9_redshift.py
+
+VISUAL UPGRADE FROM MISSION 8:
+✓ Inherit from Mission8Validation (reuses geodesic integration + validation)
+✓ Add gravitational redshift factor: g(r) = √(1 - rs/r)
+✓ Create per-vertex color mapping based on energy loss
+✓ Implement two visualization modes: local vs emission radius
+✓ Add advanced OpenGL shader with per-vertex RGB coloring
+
+SKELETON TODOs TO COMPLETE:
+☐ 1. Override initialize() to set up color mode and shaders
+☐ 2. Implement g-factor calculation for redshift
+☐ 3. Create color mapping from redshift to RGB
+☐ 4. Create advanced OpenGL shader with per-vertex colors
+☐ 5. Override render() method for spectacular colored trails
+
+IMPLEMENTATION GUIDELINES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━��━━━━━━━━━━━━━━━━━━
+1. CLASS DEFINITION:
+Inherit from Mission8Validation and implement get_name() returning "Mission 9: Gravitational Redshift Visualisation"
+
+2. INITIALIZE METHOD WITH COLOR SYSTEM:
+Set up the redshift visualization system:
+- Call super().initialize() to inherit all previous functionality
+- Choose visualization mode: 'local' (color varies along ray) or 'infty' (constant per ray)
+- Set up brightness scaling for visual enhancement
+- Create advanced shader program that accepts per-vertex colors
+- Initialize color mapping parameters
+
+3. REDSHIFT PHYSICS IMPLEMENTATION:
+Implement gravitational redshift calculation:
+- Calculate g-factor: g(r) = √(1 - rs/r) at each point along ray
+- This represents the gravitational time dilation factor
+- Energy observed at infinity: E_∞ = E_local × g(r)
+- Lower g-factor = more redshift (energy loss due to gravity)
+
+Physics concepts:
+- Photons lose energy climbing out of gravitational well
+- Effect is strongest near the black hole (small r)
+- Redshift factor approaches zero as r approaches rs
+
+4. COLOR MAPPING SYSTEM:
+Create spectacular RGB color mapping:
+- Map g-factor to color spectrum (e.g., red → yellow → green → blue)
+- High energy (large g): blue/white (less redshifted)
+- Low energy (small g): red (highly redshifted)
+- Implement smooth color interpolation for beautiful gradients
+- Consider logarithmic mapping for better visual contrast
+
+Two visualization modes:
+- LOCAL: Color changes continuously along each ray's path
+- EMISSION: Each ray has constant color based on starting radius
+
+5. ADVANCED SHADER PROGRAM:
+Create OpenGL shader with per-vertex coloring:
+- Vertex attributes: position (vec2) + color (vec3) + alpha (float)
+- Use provided vertex shader for coordinate transformation
+- Fragment shader: output the interpolated vertex color
+- Enable proper blending for trail transparency effects
+
+**Why provide vertex shader:** The coordinate transformation from screen pixels to OpenGL normalized coordinates is complex and not physics-related.
+You should focus on implementing Einstein's physics, not graphics programming details. So it's already part of the skeleton branch and solution branch.
+
+6. ENHANCED RENDER METHOD:
+Override rendering to include color data:
+- For each ray trail, calculate g-factor at each trail point
+- Map g-factors to RGB colors based on chosen mode
+- Create vertex buffers with position + color + alpha data
+- Render trails with per-vertex color information
+- Maintain inherited background rendering (grid + black hole)
+
+KEY CONCEPTS & HINTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• GRAVITATIONAL REDSHIFT: Photons lose energy escaping gravity wells
+• G-FACTOR PHYSICS: g(r) = √(1 - rs/r) quantifies time dilation effect
+• COLOR SCIENCE: Map energy to visible spectrum for intuitive visualization
+• RENDERING PIPELINE: Per-vertex attributes enable smooth color gradients
+• VISUAL POETRY: Transform abstract physics into breathtaking visual experience
+
+PHYSICS OF REDSHIFT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Gravitational time dilation stretches photon wavelengths
+• Observers at infinity see redshifted (lower energy) photons
+• Effect becomes extreme near event horizon (g → 0)
+• Conserved quantity: E_local/g(r) remains constant along geodesic
+
+DEBUGGING TIPS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━━━━��━━━━━━━━
+
+• Colors not changing? Check g-factor calculation and color mapping
+• Shader errors? Verify vertex attributes match buffer structure
+• Wrong physics? Ensure g-factor uses correct Schwarzschild formula
+• Performance issues? Consider color calculation frequency and caching
+• Visual artifacts? Check alpha blending and color interpolation
+
+EXPECTED RESULT: Absolutely stunning visualization showing photons changing color as they travel through curved spacetime! Blue photons near the black hole gradually redshift to deep red as they escape to infinity.
+
+**🌟 CONGRATULATIONS! You've created a complete relativistic black hole simulation! 🌟**
+
+This represents the pinnacle of computational physics visualization - you've successfully implemented Einstein's General Theory of Relativity with spectacular visual effects!

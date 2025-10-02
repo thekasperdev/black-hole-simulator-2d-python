@@ -1,0 +1,115 @@
+████████████████████████████████████████████████████████
+█ SPACED RESEARCH FACILITY - DEEP SPACE OBSERVATORY █
+█ PERSONAL LOG - DR. NACHO ZWEISTEINEN             █
+█ STARDATE: 2387.146 - MISSION DAY: 51              █
+█ CLASSIFICATION: COSMIC-TOP-SECRET                 █
+████████████████████████████████████████████████████████
+
+*[Deep breath, followed by the sound of calculators clicking]*
+
+Okay, I think we've officially entered the "real physics" zone.
+Dr. Repsak just burst in this morning waving a printout of Einstein's
+field equations like it was some kind of ancient treasure map.
+
+"Nacho!" he shouted, "We need to use ACTUAL PHYSICS!"
+
+I was like, "We've been using physics this whole time," but
+apparently moving pixels around the screen doesn't count as
+"rigorous scientific methodology" according to the International
+Committee of People Who Take Physics Very Seriously.
+
+*[Sound of furious scribbling on whiteboards]*
+
+So we spent the morning converting everything to SI units. Meters,
+seconds, kilograms - the whole proper physics starter pack. Dr. Repsak
+calculated that our black hole should have a mass of about 2×10³⁰ kg
+(roughly one solar mass) and a Schwarzschild radius of... 
+
+*[Calculator beeping]*
+
+...2,954 meters. That's nearly 3 kilometers of pure "nope, you're
+not escaping this" gravitational doom.
+
+The really fun part was figuring out the scale. We decided that
+1 meter equals 0.05 pixels in our simulation, which means our
+40-pixel black hole represents about 800 meters of event horizon.
+Dr. Repsak called this "pixel-to-reality mapping" and immediately
+started a spreadsheet to track it.
+
+*[Notification ping, followed by excited squeaking]*
+
+That's B-Brand-Loitte again. Their latest LinkedSpace post:
+"Heard SpaceD is finally learning proper units! Next they'll
+discover that gravity isn't just a suggestion! Our simulations
+have used SI units since day one because we're not amateurs!"
+
+The audacity. I bet their black holes still run on Windows ME
+and crash every time someone mentions general relativity.
+
+*[Distant rumbling, like a cosmic stomach growling]*
+
+Speaking of our black hole, it seems... pleased with the upgrade
+to proper physics. It's started displaying its Schwarzschild
+radius in scientific notation on its event horizon. Like a
+cosmic ID badge: "Hello, my name is 2.95×10³ meters of certain doom."
+
+Dr. Repsak is convinced it's showing off its mathematical
+sophistication. Yesterday it displayed the value of G (gravitational
+constant) in 15 decimal places. Today it's working through the
+derivation of the Schwarzschild metric in real-time.
+
+I think our black hole is becoming more educated than most
+graduate students.
+
+*[Sound of coffee machine dispensing equations instead of coffee]*
+
+The coffee machine has also been upgraded. It now calculates
+the proper caffeine concentration using molecular dynamics
+and outputs results in mol/L. Dr. Repsak tried to order a
+"large coffee" and got a 500ml solution of C₈H₁₀N₄O₂ at
+optimal thermodynamic equilibrium.
+
+It was actually pretty good coffee.
+
+Your mission, brave operator: Transform our pixel-based
+simulation into a proper physics engine using SI units
+and the Schwarzschild radius formula. This is where we
+separate the real physicists from the people who think
+"c" is just another variable.
+
+Think of it as the difference between playing with toy rockets
+and launching actual spacecraft. Same basic idea, but now
+if you mess up the math, reality notices.
+
+Key requirements:
+- Convert everything to SI units (meters, seconds, kg)
+- Calculate rs = 2GM/c² for proper black hole size
+- Set up pixel-to-meter conversion scaling
+- Make the speed of light actually mean something
+
+Pro tip: The formula rs = 2GM/c² isn't just decoration.
+That's Einstein telling us exactly how big a black hole
+should be for a given mass. Don't argue with Einstein.
+He's been right about everything so far, and it's creepy.
+
+Time is critical. The International Physics Police have
+started monitoring our simulation, and they take SI units
+VERY seriously. Dr. Repsak is already nervous about our
+non-standard coordinate system.
+
+Dr. Nacho "Finally-Using-Real-Physics" Zweisteinen
+Senior Astrophysicist & Unit Conversion Specialist
+SpaceD Research Facility - Deep Space Observatory
+
+P.S. - The photons have learned about the speed of light
+and are now traveling at exactly 299,792,458 m/s. They
+seem proud of their precision and keep leaving sticky
+notes with "c = 299792458 m/s" around the lab.
+
+P.P.S. - Dr. Repsak has started a journal called "Adventures
+in Unit Conversion" and wants to publish our findings in
+the Journal of Computational Astrophysics. I told him our
+reality-glitching photons might not pass peer review.
+
+[END LOG 5 - TRANSMISSION TERMINATED]
+████████████████████████████████████████████████████████

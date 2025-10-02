@@ -1,0 +1,89 @@
+OBJECTIVE: Create a moving light particle that travels across the screen from left to right.
+
+GETTING STARTED - SKELETON CODE WALKTHROUGH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open: src/missions/mission2_single_beam.py
+
+INHERITANCE FROM MISSION 1:
+✓ Inherit from Mission1GridBlackHole (not BaseMission)
+✓ Call self.setup_background_rendering() to reuse grid/black hole
+✓ Use self.render_background() in render() method
+
+SKELETON TODOs TO COMPLETE:
+☐ 1. Create particle shader program in initialize()
+☐ 2. Set up particle appearance (size, color)
+☐ 3. Implement spawn_particle() method
+☐ 4. Implement rebuild_vbo() method
+☐ 5. Complete update() method for particle movement
+☐ 6. Complete render() method to draw background + particle
+☐ 7. Add keyboard controls (SPACE = pause, R = reset)
+
+IMPLEMENTATION GUIDELINES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. CLASS DEFINITION:
+Inherit from Mission1GridBlackHole and implement get_name() method returning "Mission 2: Single Light Beam"
+
+2. PARTICLE SHADER PROGRAM (Add to initialize()):
+You need to:
+- Call self.setup_background_rendering() first
+- Create a ModernGL program with vertex and fragment shaders
+- Use the provided vertex shader for coordinate transformation
+- Set uniform values for point size (try 4.0) and color (warm yellow: 1.0, 0.90, 0.55)
+- Initialize simulation state: speed (~220.0), paused flag
+- Call spawn_particle() and rebuild_vbo()
+
+3. SPAWN_PARTICLE METHOD:
+Create numpy arrays to track:
+- Position: Start particle off-screen left (x = -50), vertically centered
+- Velocity: Horizontal movement only (speed, 0)
+- Alive status: Boolean array to track active particles
+
+4. REBUILD_VBO METHOD:
+This method updates the OpenGL buffer:
+- Filter positions to only alive particles
+- Handle edge case when no particles are alive (create dummy data)
+- Create new VBO and VAO with filtered position data
+
+5. UPDATE METHOD:
+Implement time-based movement:
+- Skip if paused or no particles
+- Update positions: pos += vel * dt
+- Check if particles moved off-screen right (x > width + 50)
+- Respawn particles at left edge when they exit right
+- Always call rebuild_vbo() at the end
+
+6. RENDER METHOD:
+Two-step rendering:
+- First: Call self.render_background() (inherited from Mission 1)
+- Second: Render particles using VAO with moderngl.POINTS mode
+
+7. KEYBOARD CONTROLS:
+Handle key press events:
+- SPACE key: Toggle pause state
+- R key: Respawn particle and rebuild VBO
+
+**Why provide vertex shader:** The coordinate transformation from screen pixels to OpenGL normalized coordinates is complex and not physics-related.
+You should focus on implementing Einstein's physics, not graphics programming details. So it's already part of the skeleton branch and solution branch.
+
+KEY CONCEPTS & HINTS:
+━━━━━━━━━━━━━��━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• NUMPY ARRAYS: Use dtype=np.float32 for positions and velocities
+• VBO MANAGEMENT: Always rebuild VBO after position changes
+• COORDINATE SYSTEM: Vertex shader transforms screen pixels → OpenGL normalized coordinates
+• FRAME-RATE INDEPENDENCE: Use dt (delta time) for consistent movement speed
+• PARTICLE LIFECYCLE: spawn → move → detect off-screen → respawn
+
+DEBUGGING TIPS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• No particle visible? Check if position values are reasonable and VBO is being created
+• Particle not moving? Verify update() is called and paused=False
+• Crashes on render? Ensure alive_pos array has valid data before creating VBO
+• Wrong movement speed? Remember to multiply velocity by dt in update()
+
+EXPECTED RESULT: A bright yellow particle continuously moving left to right across the screen!
+
+This mission establishes the foundation for multiple particle systems in Mission 3.

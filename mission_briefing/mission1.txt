@@ -1,0 +1,78 @@
+OBJECTIVE: Create the foundational rendering system with a grid background and black hole disc.
+
+GETTING STARTED - SKELETON CODE WALKTHROUGH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open: src/missions/mission1_grid_blackhole.py
+
+AVAILABLE FROM BaseMission:
+✓ self.ctx (ModernGL context for creating shaders/VAOs)
+✓ self.center (black hole center position as numpy array)
+✓ self.rs_px (black hole radius in pixels)
+✓ self.width, self.height (screen dimensions)
+
+SKELETON ANALYSIS - WHAT'S PROVIDED:
+✓ Vertex shader (full-screen triangle generation)
+✓ Fragment shader structure with placeholder
+✓ Method stubs with TODO comments
+
+SKELETON TODOs TO COMPLETE:
+☐ 1. Replace fragment shader placeholder with grid/disc logic
+☐ 2. Add uniform declarations to fragment shader
+☐ 3. Set up VAO and uniforms in initialize() (replace "TODO: Set up VAO...")
+☐ 4. Implement render() method (replace "TODO: Draw the grid...")
+
+IMPLEMENTATION GUIDELINES:
+━━━━━━━━━��━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━
+
+1. FRAGMENT SHADER IMPLEMENTATION:
+You need to replace the placeholder fragment shader with logic that:
+- Declares uniforms for black hole center, radius, and grid spacing
+- Uses gl_FragCoord.xy to get current pixel position
+- Calculates distance from pixel to black hole center
+- Creates grid lines using modulo operations on pixel coordinates
+- Blends background color with grid line color
+- Renders black hole as a solid black disc when distance < radius
+
+**Why provide vertex shader:** The coordinate transformation from screen pixels to OpenGL normalized coordinates is complex and not physics-related.
+You should focus on implementing Einstein's physics, not graphics programming details. So it's already part of the skeleton branch and solution branch.
+
+Key concepts for fragment shader:
+- Use `length(frag - u_center)` to calculate distance to black hole
+- Use `mod(frag.x, u_grid_gap) < 1.0` for grid line detection
+- Use `mix(background_color, grid_color, grid_factor)` for blending
+- Colors: Dark blue background (0.03, 0.04, 0.07), lighter grid (0.12, 0.14, 0.20)
+
+2. INITIALIZE METHOD:
+Complete the initialization by:
+- Setting uniform values for center position, black hole radius, and grid spacing (~24.0)
+- Creating a vertex array object (VAO) for background rendering
+- The VAO should use the background program with no vertex buffer (full-screen triangle)
+
+3. RENDER METHOD:
+Implement rendering by:
+- Calling the VAO's render method
+- Use TRIANGLES mode with 3 vertices (creates full-screen triangle)
+- This will execute your fragment shader for every pixel on screen
+
+KEY CONCEPTS & HINTS:
+━━━━���━━━━━━━━━━��━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• FULL-SCREEN RENDERING: Vertex shader generates a triangle covering the entire screen
+• FRAGMENT COORDINATES: gl_FragCoord.xy gives pixel coordinates (0 to width/height)
+• UNIFORM VALUES: Must match the data types expected by the shader
+• GRID MATHEMATICS: Modulo operation creates repeating patterns
+• DISTANCE CALCULATION: Pythagorean theorem via length() function
+
+DEBUGGING TIPS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Black screen? Check that render() calls the VAO with correct vertex count
+• Shader compilation errors? Verify uniform declarations match your usage
+• Test with solid color first: f_color = vec4(1.0, 0.0, 0.0, 1.0) should show red
+• Grid not visible? Check grid_gap value and modulo logic
+• Black hole not centered? Verify u_center uniform is set correctly
+
+EXPECTED RESULT: Dark blue background with lighter grid lines and a black circular disc at center!
+
+This foundation will be inherited by all future missions through setup_background_rendering() method.

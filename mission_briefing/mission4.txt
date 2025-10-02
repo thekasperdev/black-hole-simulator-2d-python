@@ -1,0 +1,90 @@
+OBJECTIVE: Add collision detection so light particles are absorbed when they hit the black hole.
+
+GETTING STARTED - SKELETON CODE WALKTHROUGH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open: src/missions/mission4_multiple_beams.py
+
+INHERITANCE FROM MISSION 3:
+✓ Inherit from Mission3MultipleBeamsNoCollision (reuses particle management)
+✓ Override update() to add collision detection
+✓ Keep same beam spawning and spacing controls
+✓ Add automatic wave respawn when all particles absorbed
+
+SKELETON TODOs TO COMPLETE:
+☐ 1. Set up initialization (reuse Mission 3 structure)
+☐ 2. Override update() method to add collision detection
+☐ 3. Implement vectorized distance calculation
+☐ 4. Add particle absorption logic
+☐ 5. Add automatic wave respawn system
+
+IMPLEMENTATION GUIDELINES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. CLASS DEFINITION:
+Inherit from Mission3MultipleBeamsNoCollision and implement get_name() returning "Mission 4: Multiple Light Beams"
+
+2. INITIALIZE METHOD:
+Reuse Mission 3's initialization:
+- Set self.spacing for beam spacing
+- Call super().initialize() to inherit all functionality
+
+3. PARTICLE SPAWNING:
+Inherit spawn_particle() and spawn_multiple_beams() from Mission 3:
+- These methods work perfectly for this mission
+- No changes needed to beam creation logic
+
+4. UPDATE METHOD WITH COLLISION DETECTION:
+This is the main new feature - override Mission 3's update():
+- Start with movement: move all alive particles using position += velocity * dt
+- Calculate distances from each particle to black hole center
+- Use vectorized operations for efficiency: displacement = pos - center
+- Calculate distance squared (r²) to avoid expensive sqrt operations
+- Create boolean mask for particles within black hole radius
+- Remove collided particles from alive array using boolean indexing
+- Remove particles that moved off-screen right
+- Check if all particles are gone - if so, automatically spawn new wave
+- Always call rebuild_vbo() at the end
+
+Key collision detection concepts:
+- Use numpy array operations for all particles at once
+- Distance squared comparison: r² ≤ radius² (faster than sqrt)
+- Boolean masking: alive &= ~collision_mask removes hit particles
+- Automatic wave system: respawn when no particles remain alive
+
+5. KEYBOARD CONTROLS:
+Inherit all Mission 3 controls:
+- SPACE: pause/unpause
+- R: reset beams
+- COMMA/PERIOD: adjust beam spacing
+
+**Why provide vertex shader:** The coordinate transformation from screen pixels to OpenGL normalized coordinates is complex and not physics-related.
+You should focus on implementing Einstein's physics, not graphics programming details. So it's already part of the skeleton branch and solution branch.
+
+KEY CONCEPTS & HINTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• VECTORIZED OPERATIONS: Process all particles simultaneously with numpy arrays
+• DISTANCE CALCULATION: Use (dx² + dy²) ≤ radius² instead of sqrt for performance
+• BOOLEAN MASKING: Use ~mask to invert selection (particles NOT in collision)
+• PARTICLE LIFECYCLE: spawn → move → check collision → absorb or continue
+• WAVE MECHANICS: Continuous waves of particles create realistic light beam effect
+
+DEBUGGING TIPS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Particles not disappearing? Check collision radius calculation and boolean mask logic
+• No new waves spawning? Verify the "all particles gone" condition using np.any()
+• Performance issues? Ensure using r² comparison instead of sqrt(r²)
+• Wrong collision boundary? Test that particles vanish exactly at black hole edge
+• Particles passing through? Check that collision detection runs before position update
+
+CONTROLS:
+• SPACE = Pause/unpause animation
+• R = Reset current wave
+• COMMA (,) = Decrease beam spacing
+• PERIOD (.) = Increase beam spacing
+
+EXPECTED RESULT: Light beams that get absorbed by the black hole, creating realistic light-matter interaction! New waves automatically spawn when the previous wave is fully absorbed.
+
+This introduces the core physics interaction that will be enhanced in Mission 5 with gravitational bending.

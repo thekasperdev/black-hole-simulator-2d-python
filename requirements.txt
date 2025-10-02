@@ -1,0 +1,7 @@
+flask
+flask-socketio
+gunicorn
+eventlet
+readchar
+rich
+uuid

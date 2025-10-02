@@ -1,0 +1,100 @@
+OBJECTIVE: Transform from pixel-based simulation to real physics using SI units and Schwarzschild radius formula.
+
+GETTING STARTED - SKELETON CODE WALKTHROUGH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open: src/missions/mission5_units_schwarzschild.py
+
+PHYSICS UPGRADE FROM MISSION 4:
+✓ Inherit from Mission4MultipleBeams (reuses collision detection)
+✓ Add real physics constants (G, c)
+✓ Calculate actual Schwarzschild radius: rs = 2GM/c²
+✓ Set up pixel-to-meter conversion system
+✓ Add polar coordinate tracking for future missions
+
+SKELETON TODOs TO COMPLETE:
+☐ 1. Set up physics constants and constructor
+☐ 2. Implement initialize() with unit conversion system
+☐ 3. Override spawn_multiple_beams() to add polar coordinates
+☐ 4. Update update() method to maintain polar coordinates
+☐ 5. Add black hole disc rendering with proper scaling
+
+IMPLEMENTATION GUIDELINES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. CLASS DEFINITION WITH PHYSICS CONSTANTS:
+Set up the class with real physical constants:
+- Inherit from Mission4MultipleBeams
+- Add class variables: G (gravitational constant) and c (speed of light)
+- Implement constructor that stores window dimensions
+- Return "Mission 5: SI Units & Schwarzschild Radius" from get_name()
+
+Key physics constants to use:
+- G = 6.67430e-11 (m³ kg⁻¹ s⁻²)
+- c = 299,792,458 (m/s)
+
+2. INITIALIZE METHOD WITH UNIT CONVERSION:
+Create a sophisticated unit conversion system:
+- Set up pixels_per_metre scale factor (try 0.05 for reasonable sizing)
+- Define black hole mass (try 2.0e30 kg - roughly one solar mass)
+- Calculate Schwarzschild radius using rs = 2GM/c²
+- Convert Schwarzschild radius to pixels for rendering
+- Set world dimensions in meters based on window size
+- Calculate particle speed in pixels/second (c × pixels_per_metre)
+- Set up beam spacing in physical units
+- Initialize polar coordinate array placeholder
+- Call super().initialize() to trigger particle spawning
+
+3. ENHANCED SPAWN_MULTIPLE_BEAMS:
+Extend the beam spawning to include polar coordinates:
+- Calculate beam positions using physical world dimensions
+- Create particles with same logic as Mission 4
+- After creating position arrays, compute polar coordinates for each particle
+- Use distance and angle from black hole center: r = sqrt(dx² + dy²), θ = arctan2(dy, dx)
+- Store polar coordinates in self.polar array as (r, θ) pairs
+
+4. UPDATE METHOD WITH POLAR TRACKING:
+Enhance the update method to maintain polar coordinates:
+- Move particles as before using position += velocity × dt
+- After movement, recalculate polar coordinates for all particles
+- Use polar radius for collision detection (particles within rs_px)
+- Remove absorbed and off-screen particles
+- Spawn new wave when all particles are gone
+- Always rebuild VBO
+
+5. BLACK HOLE DISC RENDERING:
+Create proper black hole visualization:
+- Set up dedicated shader program for black hole disc
+- Use the calculated Schwarzschild radius for accurate sizing
+- Ensure disc renders at correct physical scale relative to simulation
+
+**Why provide vertex shader:** The coordinate transformation from screen pixels to OpenGL normalized coordinates is complex and not physics-related.
+You should focus on implementing Einstein's physics, not graphics programming details. So it's already part of the skeleton branch and solution branch.
+
+KEY CONCEPTS & HINTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• SCHWARZSCHILD RADIUS: rs = 2GM/c² is the event horizon of a black hole
+• UNIT CONVERSION: pixels_per_metre creates bridge between physics and graphics
+• POLAR COORDINATES: (r, θ) system is essential for gravitational calculations in Mission 6
+• PHYSICAL ACCURACY: Simulation now uses real physics constants and dimensions
+• COORDINATE SYSTEMS: Manage both Cartesian (x,y) and polar (r,θ) representations
+
+DEBUGGING TIPS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Black hole too big/small? Adjust pixels_per_metre scale factor
+• Physics doesn't feel right? Verify G and c constants are correct
+• Polar coordinates wrong? Check arctan2(dy, dx) parameter order
+• Performance issues? Ensure polar calculations use vectorized numpy operations
+• Collision boundary wrong? Verify rs_px calculation matches rendered disc
+
+PHYSICS CONCEPTS:
+• Schwarzschild radius represents the event horizon (point of no return)
+• Real black holes have rs ~ 3km per solar mass
+• Speed of light creates the fundamental velocity scale
+• Gravitational constant G determines the strength of gravitational effects
+
+EXPECTED RESULT: Identical visual behavior to Mission 4, but now powered by real physics! The simulation uses actual physical constants and proper unit conversion.
+
+This establishes the physics foundation needed for Mission 6's gravitational light bending.

@@ -1,0 +1,107 @@
+OBJECTIVE: Implement fixed timestep integration with visual ray trails for deterministic physics.
+
+GETTING STARTED - SKELETON CODE WALKTHROUGH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open: src/missions/mission6_fixed_timestep.py
+
+PHYSICS UPGRADE FROM MISSION 5:
+✓ Inherit from Mission5UnitsSchwarzschild (reuses SI units)
+✓ Add Ray class with trail history storage
+✓ Implement fixed timestep integration (1ms steps)
+✓ Add time scaling for visual slowing (100,000x slower)
+✓ Create trail rendering with alpha blending
+
+SKELETON TODOs TO COMPLETE:
+☐ 1. Create Ray class with trail management
+☐ 2. Set up fixed timestep system in initialize()
+☐ 3. Implement accumulator-based update() method
+☐ 4. Create trail rendering shader program
+☐ 5. Implement render() method for trails and current positions
+
+IMPLEMENTATION GUIDELINES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━━━━��━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. RAY CLASS DESIGN:
+Create a Ray class to represent individual light rays:
+- Store position and velocity in meters (physical coordinates)
+- Maintain trail history as list of positions (limit to ~500 points)
+- Include alive status and collision detection with Schwarzschild radius
+- Implement step() method for straight-line propagation: position += velocity × dt
+- Update polar coordinates (r, φ) for diagnostics and collision checks
+- Handle trail length management to prevent memory growth
+
+Key Ray attributes:
+- Cartesian position and velocity (x, y, vx, vy) in SI units
+- Trail storage with automatic length limiting
+- Schwarzschild radius and speed of light for physics calculations
+
+2. CLASS DEFINITION AND INITIALIZATION:
+Inherit from Mission5UnitsSchwarzschild and set up fixed timestep system:
+- Define physics timestep (try 1e-3 seconds = 1 millisecond)
+- Set up time scaling factor for visual display (try 1e5 for 100,000x slowdown)
+- Initialize accumulator for timestep integration
+- Create list to store Ray objects instead of particle arrays
+- Set up trail rendering shader program
+- Call parent initialization for basic setup
+
+3. RAY SPAWNING SYSTEM:
+Replace particle arrays with Ray objects:
+- Create rays at regular intervals across screen height
+- Initialize each ray with physical coordinates and speed-of-light velocity
+- Store rays in a list for individual trail tracking
+- Set initial positions in meters using coordinate conversion
+
+4. FIXED TIMESTEP UPDATE METHOD:
+Implement accumulator-based integration:
+- Accumulate frame time until it exceeds physics timestep
+- While accumulated time ≥ timestep: step all rays and subtract timestep
+- For each ray: call ray.step(timestep) for deterministic physics
+- Remove rays that hit black hole or go off-screen
+- Spawn new rays when all are absorbed
+- This ensures consistent physics regardless of frame rate
+
+5. TRAIL RENDERING SYSTEM:
+Create shader program for rendering ray trails:
+- Use line strips or connected points to draw trails
+- Implement alpha blending for trail fade effect
+- Convert ray positions from meters back to pixels for rendering
+- Handle multiple trails efficiently with proper VBO management
+
+**Why provide vertex shader:** The coordinate transformation from screen pixels to OpenGL normalized coordinates is complex and not physics-related.
+You should focus on implementing Einstein's physics, not graphics programming details. So it's already part of the skeleton branch and solution branch.
+
+6. RENDER METHOD:
+Implement two-layer rendering:
+- First: Render background (grid + black hole) using inherited method
+- Second: Render all ray trails with alpha blending
+- Third: Render current ray positions as bright points
+- Use different colors/opacities for trails vs current positions
+
+KEY CONCEPTS & HINTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• FIXED TIMESTEP: Ensures deterministic physics independent of frame rate
+• ACCUMULATOR PATTERN: Separates physics time from rendering time
+• RAY TRAILS: Visual history shows the path light takes through spacetime
+• TIME SCALING: Slows down physics for visual observation (light normally too fast)
+• COORDINATE CONVERSION: Bridge between physical meters and screen pixels
+
+DEBUGGING TIPS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• No trails visible? Check coordinate conversion from meters to pixels
+• Physics too fast/slow? Adjust time scaling factor
+• Trails too long/short? Modify max_trail parameter in Ray class
+• Inconsistent behavior? Verify fixed timestep accumulator is working
+• Memory issues? Ensure trail length limiting is active
+
+PHYSICS CONCEPTS:
+• Fixed timestep integration provides numerical stability
+• Trail visualization reveals the geometry of spacetime
+• Time dilation effects become visible through consistent physics timing
+• Deterministic stepping enables reproducible simulations
+
+EXPECTED RESULT: Smooth ray trails showing the complete path of light through space, with consistent physics timing regardless of frame rate!
+
+This establishes the foundation for Mission 7's gravitational light bending effects.

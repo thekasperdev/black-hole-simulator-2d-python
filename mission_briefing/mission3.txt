@@ -1,0 +1,95 @@
+OBJECTIVE: Create multiple parallel light beams moving across the screen (no collision detection yet).
+
+GETTING STARTED - SKELETON CODE WALKTHROUGH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open: src/missions/mission3_multiple_beams_no_collision.py
+
+INHERITANCE FROM MISSION 2:
+✓ Inherit from Mission2SingleBeam (reuses particle shader + background)
+✓ Override spawn_particle() to create multiple beams
+✓ Extend update() for multi-particle management
+✓ Add beam spacing controls with keyboard
+
+SKELETON TODOs TO COMPLETE:
+☐ 1. Set up beam spacing in initialize()
+☐ 2. Override spawn_particle() to call spawn_multiple_beams()
+☐ 3. Implement spawn_multiple_beams() method
+☐ 4. Update the update() method for multiple particles
+☐ 5. Add keyboard controls for beam spacing (, and . keys)
+
+IMPLEMENTATION GUIDELINES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. CLASS DEFINITION:
+Inherit from Mission2SingleBeam and implement get_name() returning "Mission 3: Multiple Light Beams"
+
+2. INITIALIZE METHOD:
+Add beam spacing configuration:
+- Set self.spacing (try 24 pixels between beam rows)
+- Call super().initialize() which will trigger spawn_particle()
+
+3. OVERRIDE SPAWN_PARTICLE:
+Replace the single particle spawn with multiple beams:
+- Create a simple override that calls your spawn_multiple_beams() method
+- This allows inheritance of all other Mission 2 functionality
+
+4. SPAWN_MULTIPLE_BEAMS METHOD:
+Create parallel horizontal beams:
+- Calculate Y positions using np.arange() with margin and spacing
+- For each beam row, create multiple particles (try ~80 per beam)
+- Stagger initial X positions so beams appear continuous (offset by ~1.5 pixels)
+- Start particles off-screen left (x = -200) to avoid sudden appearance
+- Set all particles to move horizontally at the same speed
+
+Key concepts:
+- Use np.arange(start, stop, step) to generate evenly spaced Y coordinates
+- Create lists of positions and velocities, then convert to numpy arrays
+- Initialize all particles as alive
+
+5. UPDATE METHOD OVERRIDE:
+Extend Mission 2's update for multiple particles:
+- Skip if paused or no particles exist
+- Move all alive particles using position += velocity * dt
+- Handle particles that move off-screen right: respawn at left with same Y coordinate
+- Cull particles that drift too far off-screen vertically
+- IMPORTANT: NO collision detection yet - particles pass through black hole
+- Always call rebuild_vbo() at the end
+
+6. KEYBOARD CONTROLS:
+Extend Mission 2's controls with beam spacing:
+- Keep SPACE (pause) and R (reset) functionality
+- Add COMMA key: decrease spacing (tighter beams)
+- Add PERIOD key: increase spacing (wider beams)
+- When spacing changes, respawn beams and rebuild VBO
+
+**Why provide vertex shader:** The coordinate transformation from screen pixels to OpenGL normalized coordinates is complex and not physics-related.
+You should focus on implementing Einstein's physics, not graphics programming details. So it's already part of the skeleton branch and solution branch.
+
+KEY CONCEPTS & HINTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━━━━��━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• BEAM FORMATION: Use mathematical spacing to create parallel horizontal lines
+• PARTICLE ARRAYS: Manage hundreds of particles efficiently with numpy operations
+• STAGGERED SPAWNING: Offset initial positions to create continuous beam appearance
+• WRAPPING BEHAVIOR: Particles respawn on left when exiting right (infinite stream effect)
+• NO PHYSICS YET: Particles ignore black hole completely in this mission
+
+DEBUGGING TIPS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• No beams visible? Check spawn_multiple_beams() creates particles with reasonable positions
+• Beams not moving? Verify update() processes all particles, not just one
+• Performance issues? Ensure alive array filters out off-screen particles
+• Spacing not working? Test with comma/period keys and check beam regeneration
+• Beams look broken? Verify particle staggering creates smooth continuous lines
+
+CONTROLS:
+• SPACE = Pause/unpause animation
+• R = Reset all beams
+• COMMA (,) = Decrease beam spacing (tighter beams)
+• PERIOD (.) = Increase beam spacing (wider beams)
+
+EXPECTED RESULT: Multiple parallel light beams streaming continuously across the screen with adjustable spacing!
+
+This establishes the multi-particle framework needed for Mission 4's collision detection.

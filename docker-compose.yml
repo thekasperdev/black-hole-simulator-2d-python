@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  spaced-terminal:
+    build: .
+    container_name: spaced-mission-terminal
+    
+    # Enable interactive terminal
+    stdin_open: true
+    tty: true
+    
+    # Environment variables
+    environment:
+      - HACKATHON_MODE=true
+      - PYTHONUNBUFFERED=1
+      - TERM=xterm-256color
+
+    ports:
+      - "8080:8080"
